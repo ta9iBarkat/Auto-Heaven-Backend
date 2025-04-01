@@ -1,6 +1,6 @@
 import express from "express";
 import { registerUser, loginUser, logoutUser, verifyEmail, forgotPassword, resetPassword, refreshToken } from "../controllers/authController.js";
-import loginLimiter from "./middleware/rateLimiter.js"
+import {loginLimiter} from "../middleware/rateLimiter.js"
 
 const router = express.Router();
 

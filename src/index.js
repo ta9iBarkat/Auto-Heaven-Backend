@@ -8,7 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 import errorHandler from "./middleware/errorHandler.js";
 import notFound from "./middleware/notFound.js";
 import securityMiddleware from "./middleware/security.js";
-import globalLimiter from "./middleware/rateLimiter.js"
+import {globalLimiter} from "./middleware/rateLimiter.js"
 
 dotenv.config();
 const app = express();
