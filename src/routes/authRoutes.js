@@ -1,5 +1,6 @@
 import express from "express";
 import { registerUser, loginUser, logoutUser, verifyEmail, forgotPassword, resetPassword, refreshToken } from "../controllers/authController.js";
+import loginLimiter from "./middleware/rateLimiter.js"
 
 const router = express.Router();
 
@@ -7,7 +8,7 @@ const router = express.Router();
 router.post("/register", registerUser);
 
 // Login user
-router.post("/login", loginUser);
+router.post("/login", loginLimiter, loginUser);
 
 // Logout user
 router.post("/logout", logoutUser);
