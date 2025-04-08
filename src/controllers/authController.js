@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateToken.js";
 import asyncHandler from "express-async-handler";
 import sendEmail from "../utils/emailService.js";
+import { Console } from "console";
 
 
 // Temporary storage for unverified users
@@ -42,8 +43,9 @@ export const registerUser = asyncHandler(async (req, res) => {
   const message = `Welcome to AutoHeaven! Please verify your email by clicking on the link: ${verificationUrl}`;
 
   // Send verification email
+  console.log(email)
   await sendEmail({
-    email,
+    email: email,
     subject: "Verify Your Email - AutoHeaven",
     message,
   });
@@ -114,6 +116,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     });
 
   } catch (error) {
+    console.error("❌ Token generation failed:", error);
     res.status(500);
     throw new Error("Failed to generate authentication token");
   }
