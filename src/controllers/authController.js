@@ -283,7 +283,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
 // @access  Public
 
 export const refreshToken = asyncHandler(async(req, res) =>{
-  const { refreshToken } = res.cookies;
+  const { refreshToken } = req.cookies;
 
   if(!refreshToken){
     res.status(401);
