@@ -4,8 +4,7 @@ import User from "../models/User.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateToken.js";
 import asyncHandler from "express-async-handler";
 import sendEmail from "../utils/emailService.js";
-import { Console } from "console";
-
+import jwt from "jsonwebtoken";
 
 // Temporary storage for unverified users
 const unverifiedUsers = new Map();
@@ -296,16 +295,17 @@ export const refreshToken = asyncHandler(async(req, res) =>{
     res.status(403);
     throw new Error("Invalid refresh token");
   }
+  console.log(user)
   try {
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET); //check token expiration
-    newAccessToken = generateAccessToken(user);
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET); 
 
-    res.status(200).json({newAccessToken})
+    const newAccessToken = generateAccessToken(user);
 
+    res.status(200).json({ newAccessToken });
   } catch (error) {
+    console.error("JWT error:", error.message);
     res.status(403);
-    throw new Error("Invalid refresh token");
-
+    throw new Error("Invalid or expired refresh token");
   }
 
 })
