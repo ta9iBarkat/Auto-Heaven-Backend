@@ -37,7 +37,12 @@ const CarSchema = new mongoose.Schema({
     enum: ['Luxury', 'Family', 'Van', 'SUV', 'Sports', 'Economy']
   },
   images: {
-    type: [String],
+    type: [
+    {
+      url: { type: String, required: true }, // URL of the image
+      public_id: { type: String, required: true } // Cloudinary public ID
+    }
+  ],
     required: true,
     validate: [arrayLimit, '{PATH} must contain at least 1 image']
   },

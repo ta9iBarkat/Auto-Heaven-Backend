@@ -1,4 +1,5 @@
 import express from 'express';
+import upload from '../middleware/uploadMiddleware.js'; // Multer middleware for file uploads
 import {
   getCars,
   getCar,
@@ -29,8 +30,10 @@ router.route('/:id/availability')
 router.use(protect);
 
 // Owner/admin restricted routes
-router.route('/')
-  .post(authorize('seller', 'admin'), createCar);
+
+
+router.post('/', upload.array('images', 10), createCar); // Allow up to 10 images
+
 
 router.route('/:id')
   .put(authorize('seller', 'admin'), updateCar)

@@ -1,4 +1,6 @@
-import Car from '../models/Car.js';
+import asyncHandler from 'express-async-handler';
+import Car from '../models/Car.js'; // Ensure path is correct
+import { cloudinaryUpload } from '../config/cloudinary.js'; // Ensure path is correct
 
 // @desc    Get all cars
 // @route   GET /api/cars
@@ -25,19 +27,112 @@ export const getCar = async (req, res, next) => {
   }
 };
 
-// @desc    Create car
+/////////////////////////////////////////////////////////////////
+
+// @desc    Create a new car
 // @route   POST /api/cars
-export const createCar = async (req, res, next) => {
-  try {
-    // Add owner from authenticated user
-    req.body.owner = req.user.id;
-    
-    const car = await Car.create(req.body);
-    res.status(201).json({ success: true, data: car });
-  } catch (err) {
-    next(err);
+// @access  Private (Sellers only)
+
+
+export const createCar = asyncHandler(async (req, res) => {
+  const {
+    title,
+    listingType, // Expected: 'rent' or 'sale'
+    category,
+  } = req.body;
+  const priceStr = req.body.price; // Get price as string/any and parse carefully
+
+  let numericPrice;
+  if (priceStr !== undefined && priceStr !== null && String(priceStr).trim() !== "") {
+    numericPrice = parseFloat(priceStr);
   }
-};
+
+  // --- Start of Validation ---
+  if (!title || !listingType || numericPrice === undefined || isNaN(numericPrice) || !category) {
+    res.status(400);
+    throw new Error('Please provide title, listingType, a valid numeric price, and category.');
+  }
+
+  if (listingType !== 'rent' && listingType !== 'sale') {
+    res.status(400);
+    throw new Error("listingType must be either 'rent' or 'sale'.");
+  }
+
+  // You might want to adjust this validation based on your business rules (e.g., allow free items)
+  if (numericPrice <= 0) {
+      res.status(400);
+      throw new Error('Price must be a positive number.');
+  }
+
+  // Validate category against enum values from the model (optional here, Mongoose will do it anyway)
+  // const validCategories = ['Luxury', 'Family', 'Van', 'SUV', 'Sports', 'Economy'];
+  // if (!validCategories.includes(category)) {
+  //   res.status(400);
+  //   throw new Error(`Invalid category. Must be one of: ${validCategories.join(', ')}`);
+  // }
+  // --- End of Validation ---
+
+
+  // --- Handle Image Uploads ---
+  let imagesData = [];
+  if (!req.files || req.files.length === 0) {
+    // This aligns with the model's validation: `validate: [arrayLimit, '{PATH} must contain at least 1 image']` (for the lower bound)
+    res.status(400);
+    throw new Error('At least one image is required.');
+  }
+
+  if (req.files.length > 10) {
+    // This aligns with the model's arrayLimit upper bound.
+    res.status(400);
+    throw new Error('You can upload a maximum of 10 images.');
+  }
+
+  const uploadPromises = req.files.map((file) =>
+    cloudinaryUpload(file.buffer, file.mimetype) // Assumes multer provides file.buffer
+  );
+
+  try {
+    const uploadResults = await Promise.all(uploadPromises);
+    imagesData = uploadResults.map((result) => ({
+      url: result.secure_url,
+      public_id: result.public_id,
+    }));
+  } catch (uploadError) {
+    console.error("Cloudinary upload error:", uploadError);
+    res.status(500); // Internal Server Error for upload failures
+    throw new Error('Image upload failed. Please ensure files are valid images and try again.');
+  }
+  // --- End of Image Uploads ---
+
+
+  // --- Prepare Car Data for Creation ---
+  const carData = {
+    owner: req.user.id, // Assumes req.user is populated by auth middleware
+    title,
+    listingType,
+    category,
+    images: imagesData,
+    // isAvailable defaults to true as per the schema
+    // bookedDates defaults to an empty array as per the schema
+  };
+
+  // Add price field based on listingType
+  if (listingType === 'rent') {
+    carData.pricePerDay = numericPrice;
+  } else if (listingType === 'sale') {
+    carData.salePrice = numericPrice;
+  }
+  // Mongoose schema will validate if the correct price field (pricePerDay/salePrice) is present
+  // based on the listingType.
+
+  // Create the car in the database
+  // Mongoose validation (including enums, maxlength, custom validators like arrayLimit) will run here
+  const newCar = await Car.create(carData);
+
+  res.status(201).json({ success: true, data: newCar });
+});
+
+
 
 // @desc    Update car
 // @route   PUT /api/cars/:id
