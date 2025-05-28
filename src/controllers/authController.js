@@ -36,7 +36,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     role,
   });
   console.log(process.env.FRONTEND_URL)
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+  const verificationUrl = `${process.env.FRONTEND_URL}/api/auth/verify-email/${verificationToken}`;
 
   // Email message
   const message = `Welcome to AutoHeaven! Please verify your email by clicking on the link: ${verificationUrl}`;
@@ -150,12 +150,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   await user.save();
 
   // Store token in HTTP-only cookie
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
+  res.cookie("refreshToken", refreshToken);
 
   res.status(200).json({
     accessToken,
@@ -220,7 +215,7 @@ export const forgotPassword = asyncHandler(async(req, res) =>{
   await user.save();
 
 
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
+  const resetUrl = `${process.env.FRONTEND_URL}/api/auth/reset-password/${resetToken}`
   const message = `Click the link below to reset your password:\n\n${resetUrl}\n\nThis link expires in 10 minutes.`;
 
   try {

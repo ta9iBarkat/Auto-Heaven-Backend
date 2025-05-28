@@ -2,7 +2,7 @@ import cors from "cors";
 
 let Cors = cors({
   origin: (origin, callback) => {
-    let allowedOrigins = ["http://localhost:5173", "http://www.google.com"];
+    let allowedOrigins = ["http://localhost:5173", "http://localhost:5000"];
 
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true); // Allow request
