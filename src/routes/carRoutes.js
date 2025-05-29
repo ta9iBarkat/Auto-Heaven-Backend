@@ -1,6 +1,7 @@
 import express from 'express';
 import upload from '../middleware/uploadMiddleware.js'; // Multer middleware for file uploads
 import {
+  deleteCarImage,
   getCars,
   getCar,
   createCar,
@@ -26,17 +27,21 @@ router.route('/category/:category')
 router.route('/:id/availability')
   .get(checkAvailability);
 
+
 // Protected routes (authenticated users)
 router.use(protect);
-
-// Owner/admin restricted routes
 
 
 router.post('/', upload.array('images', 10), createCar); // Allow up to 10 images
 
+// Owner/admin restricted routes
 
 router.route('/:id')
-  .put(authorize('seller', 'admin'), updateCar)
-  .delete(authorize('seller', 'admin'), deleteCar);
+.put(authorize('seller', 'admin'), updateCar)
+.delete(authorize('seller', 'admin'), deleteCar);
+
+
+
+router.delete('/:carId/images/:publicId', deleteCarImage);
 
 export default router;
