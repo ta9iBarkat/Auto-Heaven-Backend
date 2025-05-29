@@ -35,8 +35,9 @@ export const registerUser = asyncHandler(async (req, res) => {
     contactDetails,
     role,
   });
-  console.log(process.env.FRONTEND_URL)
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+  // hna lazm ykon url ta3 page front fiha welcome (ki tro7 llpage hadik ytb3at req lhad endpoint FRONTEND_URL/api/auth/verify-email/${verificationToken} after that l'user will be saved in database)
+  const verificationUrl = `${process.env.FRONTEND_URL}/api/auth/verify-email/${verificationToken}`;
 
   // Email message
   const message = `Welcome to AutoHeaven! Please verify your email by clicking on the link: ${verificationUrl}`;
@@ -219,8 +220,8 @@ export const forgotPassword = asyncHandler(async(req, res) =>{
 
   await user.save();
 
-
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
+// hna lazm ykon front url ta3 page ta3 password reset
+  const resetUrl = `${process.env.FRONTEND_URL}/api/auth/reset-password/${resetToken}`
   const message = `Click the link below to reset your password:\n\n${resetUrl}\n\nThis link expires in 10 minutes.`;
 
   try {
