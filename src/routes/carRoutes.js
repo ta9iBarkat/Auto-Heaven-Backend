@@ -1,6 +1,7 @@
 import express from 'express';
 import upload from '../middleware/uploadMiddleware.js'; // Multer middleware for file uploads
 import {
+  addCarImages,
   deleteCarImage,
   getCars,
   getUserCars,
@@ -42,8 +43,8 @@ router.route('/:id')
 .put(authorize('seller', 'admin'), updateCar)
 .delete(authorize('seller', 'admin'), deleteCar);
 
+router.post('/:Id/images', upload.array('images', 10) , authorize('seller'),addCarImages);
 
-
-router.delete('/:carId/images/:publicId', deleteCarImage);
+router.delete('/:Id/images/:publicId', authorize('seller', 'admin'), deleteCarImage);
 
 export default router;

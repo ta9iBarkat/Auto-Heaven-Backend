@@ -2,6 +2,14 @@ import asyncHandler from 'express-async-handler';
 import Car from '../models/Car.js'; // Ensure path is correct
 import { cloudinaryUpload , cloudinary } from '../config/cloudinary.js'; // Ensure path is correct
 
+class ErrorResponse extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+
 // @desc    Get all cars
 // @route   GET /api/cars
 export const getCars = async (req, res, next) => {
@@ -78,13 +86,6 @@ export const createCar = asyncHandler(async (req, res) => {
       throw new Error('Price must be a positive number.');
   }
 
-  // Validate category against enum values from the model (optional here, Mongoose will do it anyway)
-  // const validCategories = ['Luxury', 'Family', 'Van', 'SUV', 'Sports', 'Economy'];
-  // if (!validCategories.includes(category)) {
-  //   res.status(400);
-  //   throw new Error(`Invalid category. Must be one of: ${validCategories.join(', ')}`);
-  // }
-  // --- End of Validation ---
 
 
   // --- Handle Image Uploads ---
@@ -130,17 +131,12 @@ export const createCar = asyncHandler(async (req, res) => {
     // bookedDates defaults to an empty array as per the schema
   };
 
-  // Add price field based on listingType
   if (listingType === 'rent') {
     carData.pricePerDay = numericPrice;
   } else if (listingType === 'sale') {
     carData.salePrice = numericPrice;
   }
-  // Mongoose schema will validate if the correct price field (pricePerDay/salePrice) is present
-  // based on the listingType.
 
-  // Create the car in the database
-  // Mongoose validation (including enums, maxlength, custom validators like arrayLimit) will run here
   const newCar = await Car.create(carData);
 
   res.status(201).json({ success: true, data: newCar });
@@ -174,7 +170,7 @@ export const updateCar = async (req, res, next) => {
   }
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 // @desc    Delete car and its associated images from Cloudinary
 // @route   DELETE /api/cars/:id
@@ -217,26 +213,89 @@ export const deleteCar = asyncHandler(async (req, res, next) => {
     }
   }
 
-  // Delete car from database
-  await car.deleteOne(); // Mongoose v6+ preferred way. For older versions: await car.remove();
+  await car.deleteOne();
 
   res.status(200).json({ success: true, data: {}, message: 'Car and associated images deleted successfully.' });
 });
 
+// @desc    Add more images to an existing car
+// @route   POST /api/cars/:Id/images
+// @access  Private (Owner or Admin)
+export const addCarImages = asyncHandler(async (req, res, next) => {
+  const { Id } = req.params;
+
+  // 1. Check if files were uploaded
+  if (!req.files || req.files.length === 0) {
+    return next(new ErrorResponse('Please upload at least one image file.', 400));
+  }
+
+  // 2. Find the car
+  const car = await Car.findById(Id);
+  if (!car) {
+    return next(new ErrorResponse(`Car not found with id ${Id}`, 404));
+  }
+
+  // 3. Verify ownership or admin role
+  if (car.owner.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(new ErrorResponse(`User ${req.user.id} is not authorized to add images to this car`, 401));
+  }
+
+  // 4. Check against total image limit (e.g., 10 from your CarSchema's arrayLimit)
+  const MAX_IMAGES_ALLOWED = 10; // Should match your schema's upper limit in arrayLimit
+  const currentImageCount = car.images.length;
+  const newImagesCount = req.files.length;
+
+  if (currentImageCount + newImagesCount > MAX_IMAGES_ALLOWED) {
+    return next(new ErrorResponse(`Cannot add ${newImagesCount} images. A car can have a maximum of ${MAX_IMAGES_ALLOWED} images. You currently have ${currentImageCount}.`, 400));
+  }
+
+  // 5. Upload new images to Cloudinary
+  const uploadPromises = req.files.map(file =>
+    cloudinaryUpload(file.buffer, file.mimetype)
+  );
+
+  let newImageDetails = [];
+  try {
+    const uploadResults = await Promise.all(uploadPromises);
+    newImageDetails = uploadResults.map(result => ({
+      url: result.secure_url,
+      public_id: result.public_id,
+    }));
+  } catch (uploadError) {
+    console.error("Cloudinary upload error while adding images:", uploadError);
+    // Note: If some images uploaded before an error, they are on Cloudinary but not in DB yet.
+    // For simplicity, we fail the whole operation. More complex handling could delete already uploaded ones.
+    return next(new ErrorResponse('Failed to upload some images to the cloud. Please try again.', 500));
+  }
+
+  // 6. Add new image details to the car's images array
+  car.images.push(...newImageDetails);
+
+  // 7. Save the updated car document
+  // Mongoose validation (including arrayLimit) will run again on save
+  await car.save();
+
+  res.status(200).json({
+    success: true,
+    message: `${newImagesCount} image(s) added successfully.`,
+    data: car,
+  });
+});
+
 // @desc    Delete a specific image of a car from Cloudinary and DB
-// @route   DELETE /api/cars/:carId/images/:publicId
+// @route   DELETE /api/cars/:Id/images/:publicId
 // @access  Private (Owner or Admin)
 export const deleteCarImage = asyncHandler(async (req, res, next) => {
-  const { carId, publicId } = req.params;
+  const { Id, publicId } = req.params;
 
   if (!publicId) {
     return next(new Error('Image public_id is required.', 400));
   }
 
-  const car = await Car.findById(carId);
+  const car = await Car.findById(Id);
 
   if (!car) {
-    return next(new Error(`Car not found with id ${carId}`, 404));
+    return next(new Error(`Car not found with id ${Id}`, 404));
   }
 
   // Verify ownership or admin role
@@ -276,10 +335,6 @@ export const deleteCarImage = asyncHandler(async (req, res, next) => {
 
   // Remove image reference from car document in DB
   car.images.splice(imageIndex, 1); // Remove the image from the array
-  // Or using Mongoose's $pull, which can be more atomic in some cases:
-  // await Car.updateOne({ _id: carId }, { $pull: { images: { public_id: publicId } } });
-  // However, since we already fetched the 'car' document and might have other changes,
-  // modifying the array and then saving is common.
 
   await car.save();
 
@@ -289,32 +344,6 @@ export const deleteCarImage = asyncHandler(async (req, res, next) => {
     data: car // Return the updated car object
   });
 });
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// // @desc    Delete car
-// // @route   DELETE /api/cars/:id
-// export const deleteCar = async (req, res, next) => {
-//   try {
-//     const car = await Car.findById(req.params.id);
-
-//     if (!car) {
-//       return next(new Error(`Car not found with id ${req.params.id}`, 404));
-//     }
-
-//     // Verify ownership
-//     if (car.owner.toString() !== req.user.id && req.user.role !== 'admin') {
-//       return next(new Error(`Not authorized to delete this car`, 401));
-//     }
-
-//     await car.remove();
-//     res.status(200).json({ success: true, data: {} });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
 
 
 
