@@ -12,6 +12,20 @@ export const getCars = async (req, res, next) => {
     next(err);
   }
 };
+export const getUserCars = async (req, res, next) => {
+  try {
+    const cars = await Car.find({ owner: req.user.id })
+      .populate('owner', 'name email image');
+    
+    res.status(200).json({
+      success: true,
+      count: cars.length,
+      data: cars
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 // @desc    Get single car
 // @route   GET /api/cars/:id

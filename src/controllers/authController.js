@@ -35,8 +35,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     contactDetails,
     role,
   });
-
-  // hna lazm ykon url ta3 page front fiha welcome (ki tro7 llpage hadik ytb3at req lhad endpoint FRONTEND_URL/api/auth/verify-email/${verificationToken} after that l'user will be saved in database)
+  console.log(process.env.FRONTEND_URL)
   const verificationUrl = `${process.env.FRONTEND_URL}/api/auth/verify-email/${verificationToken}`;
 
   // Email message
@@ -151,12 +150,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   await user.save();
 
   // Store token in HTTP-only cookie
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
+  res.cookie("refreshToken", refreshToken);
 
   res.status(200).json({
     accessToken,
@@ -220,7 +214,7 @@ export const forgotPassword = asyncHandler(async(req, res) =>{
 
   await user.save();
 
-// hna lazm ykon front url ta3 page ta3 password reset
+
   const resetUrl = `${process.env.FRONTEND_URL}/api/auth/reset-password/${resetToken}`
   const message = `Click the link below to reset your password:\n\n${resetUrl}\n\nThis link expires in 10 minutes.`;
 

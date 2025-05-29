@@ -3,6 +3,7 @@ import upload from '../middleware/uploadMiddleware.js'; // Multer middleware for
 import {
   deleteCarImage,
   getCars,
+  getUserCars,
   getCar,
   createCar,
   updateCar,
@@ -17,6 +18,7 @@ const router = express.Router();
 // Public routes
 router.route('/')
   .get(getCars);
+  router.get('/my-cars', protect, getUserCars);
 
 router.route('/:id')
   .get(getCar);
