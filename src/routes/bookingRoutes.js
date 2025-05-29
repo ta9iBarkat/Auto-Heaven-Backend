@@ -21,7 +21,7 @@ router.route('/')
 router.route('/user/:userId')
   .get(getUserBookings);
 
-router.route('/:id/cancel')
+router.route('/:id/cancel') 
   .put(cancelBooking);
 
 // Owner/admin routes
