@@ -28,7 +28,7 @@ app.use(globalLimiter);
 connectDB();
 
 // Routes
-app.use("/api/auth", adminRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/cars", carRoutes);
