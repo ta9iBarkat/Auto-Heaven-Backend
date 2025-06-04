@@ -1,40 +1,64 @@
 # 🚗 AutoHeaven Backend
 
-AutoHeaven is a full-featured backend API for a car marketplace platform where users can buy, sell, or rent vehicles. Built with **Express.js** and **MongoDB**, it offers secure authentication, image upload via Cloudinary, and role-based access for users, sellers, and admins.
+AutoHeaven is the backend API for a car marketplace platform where users can **buy**, **sell**, or **rent** cars. It provides secure authentication, role-based access, car listing management, image handling, and admin features.
+
+---
+
+## 🔍 Overview
+
+This backend is built using **Node.js**, **Express**, and **MongoDB**, following the **MVC architecture**. It supports:
+- Secure login and registration with **email verification**
+- **JWT-based authentication**
+- Role-based access for **users**, **sellers**, and **admins**
+- Cloud image upload with **Cloudinary**
+- Admin control over users and car listings
 
 ---
 
 ## 🌟 Features
 
-- **User Authentication**  
-  - JWT-based login & signup  
-  - Email verification via a free email service  
-  - Access & refresh token system
+- **Authentication**
+  - Signup with email confirmation
+  - JWT Access & Refresh Tokens
+  - Password hashing with bcrypt
 
-- **Role-Based Access**  
-  - Users: Browse car listings  
-  - Sellers: Create, update, and delete their own listings  
-  - Admins: Full access to manage cars and users
+- **Authorization & Roles**
+  - Users: Browse listings
+  - Sellers: Manage own car listings
+  - Admins: Full control (cars, users)
 
-- **Car Listings**  
-  - CRUD operations for car listings  
-  - Filter & search cars  
-  - Image upload to Cloudinary (with `public_id` tracking)
+- **Car Listings**
+  - Create, edit, delete (with ownership check)
+  - View and search/filter listings
+  - Store car images using Cloudinary
 
-- **Security**  
-  - CORS configuration  
-  - Helmet for secure HTTP headers  
-  - Rate limiting to prevent brute-force attacks  
-  - Route protection and authorization middleware
+- **Security**
+  - CORS setup
+  - Helmet for secure headers
+  - Rate limiting to block brute-force attacks
+  - Protected routes using `protect` and `authorize` middleware
+
+---
+
+## 🧰 Tech Stack
+
+| Category       | Tools                     |
+|----------------|---------------------------|
+| Language       | JavaScript (ES Modules)   |
+| Runtime        | Node.js                   |
+| Framework      | Express.js                |
+| Database       | MongoDB + Mongoose        |
+| Auth           | JWT, bcrypt               |
+| File Upload    | Cloudinary                |
+| Email Service  | Free SMTP (e.g. Gmail)    |
+| Security       | Helmet, express-rate-limit, CORS |
+| Project Pattern| MVC (Model-View-Controller)|
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 How to Run
 
-- **Backend**: Node.js, Express.js  
-- **Database**: MongoDB & Mongoose  
-- **Auth**: JWT, bcrypt  
-- **Image Upload**: Cloudinary  
-- **Security**: Helmet, express-rate-limit, CORS
-
----
+```bash
+git clone https://github.com/yourusername/autoheaven-backend.git
+cd autoheaven-backend
+npm run dev
